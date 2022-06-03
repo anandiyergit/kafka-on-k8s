@@ -1,0 +1,30 @@
+Install with eksctl
+
+eksctl create cluster --name kafka-rnd-cluster --version 1.21 --with-oidc --without-nodegroup --profile rnd
+
+eksctl create nodegroup --cluster kafka-rnd-cluster --region us-west-2 --name kafka-rnd-nodegroup --node-type t3.medium --nodes 3 --nodes-min 3 --nodes-max 3 --profile rnd
+
+aws eks describe-addon --cluster-name kafka-rnd-cluster --addon-name vpc-cni --query "addon.addonVersion" --output text
+
+K8s Context Switch
+
+RnD
+aws eks update-kubeconfig --region us-west-2 --name kafka-rnd-cluster
+
+Scale
+aws eks update-kubeconfig --region us-west-2 --name cwp-np-shared-scale-eks-cluster
+
+Int
+aws eks update-kubeconfig --region us-west-2 --name cwp-np-shared-eks-cluster --profile non-prod
+
+Scale-Dev
+aws eks update-kubeconfig --region us-west-2 --name cwp-scale-eks-cluster 
+
+Int
+aws eks update-kubeconfig --region us-west-2 --name cwp-int-eks-cluster
+
+Prod
+aws eks update-kubeconfig --region us-west-2 --name cwp-shared-eks-cluster 
+
+kubectl create -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n cluster
+kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n cluster

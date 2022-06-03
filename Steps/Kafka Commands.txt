@@ -1,0 +1,30 @@
+Kafka Commands
+
+-> Installing kafka client on Mac
+brew install kafka
+
+-> Kafka Create Topic
+kafka-topics --bootstrap-server <bootstrap-server-endpoint> --create --topic sample_topic --partitions 1 --replication-factor 1
+
+-> List Topics
+kafka-topics --bootstrap-server <bootstrap-server-endpoint> --list
+
+-> Kafka Producer
+
+kafka-console-producer --bootstrap-server <bootstrap-server-endpoint> --topic sample_topic
+
+-> Kafka consumer
+kafka-console-consumer  --bootstrap-server <bootstrap-server-endpoint> --topic sample_topic --from-beginning
+
+Zookeeper Utility
+Exec into broker
+cd /opt/kafka/bin 
+./zookeeper-shell.sh localhost:12181
+get /brokers/topics/topic_name
+deleteall /brokers/topics/topic_name
+
+For list topics
+ls /brokers/topics
+
+./bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic 'giorgos-.*'
+

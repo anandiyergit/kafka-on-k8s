@@ -1,0 +1,42 @@
+Follow the instructions to deploy the SCRAM-SHA-512 TLS based encryption data from client to server
+
+Brief -> Applying different authentication types: TLS and SASL SCRAM-SHA-512 on to the cluster and provide authentication and authorization for clients.
+
+1. Changes in the Kafka CRD
+external:
+  type: loadbalancer
+  tls: true
+  authentication:
+    type: scram-sha-512
+
+2. Deploy the CRD.
+
+3. Deploy Kafka User CRD.
+
+4. Deploy Kafka Topic CRD.
+
+5. TLS client authentication->
+
+Extract and configure the user credentials
+
+export KAFKA_USER_NAME=scram-user
+kubectl get secret $KAFKA_USER_NAME -o jsonpath='{.data.password}' | base64 --decode > user-scram.password
+
+6. Extract and configure server CA cert->
+
+Extract the cluster CA certificate and password
+
+export CLUSTER_NAME=scram-cluster
+kubectl get secret $CLUSTER_NAME-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 --decode > ca.crt
+kubectl get secret $CLUSTER_NAME-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 --decode > ca.password
+
+7. Run a go-based client to test. Following are importatn configurations->
+
+export KAFKA_BOOTSTRAP_SERVERS=[replace with public-ip:9094]
+export CA_CERT_LOCATION=[path to ca.crt file]
+export KAFKA_TOPIC=strimzi-test-topic
+export SCRAM_USERNAME=$KAFKA_USER_NAME
+export SCRAM_PASSWORD=[contents of user-scram.password file]
+
+go build -tags dynamic client.go
+./client

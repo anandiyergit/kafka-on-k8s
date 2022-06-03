@@ -1,0 +1,29 @@
+K8s Commands for Kafka Workloads
+
+-> Fetching the Kafka Infra
+k get kafka -n my-kafka-project
+NAME               DESIRED KAFKA REPLICAS   DESIRED ZK REPLICAS   READY   WARNINGS
+my-kafka-cluster   1                        1                     True
+
+-> Fetching the Kafka Topics
+k get kafkatopic -n my-kafka-project
+NAME                                                                                               CLUSTER            PARTITIONS   REPLICATION FACTOR                       READY
+anand-topic                                                                                        my-kafka-cluster   1            1
+                            True
+anand-topic-new                                                                                    my-kafka-cluster   3            1
+                            True
+consumer-offsets---84e7a678d08f4bd226872e5cdd4eb527fadc1c6a                                        my-kafka-cluster   50           1
+                            True
+my-topic                                                                                           my-cluster         1            1
+
+strimzi-store-topic---effb8e3e057afce1ecf67c3f5d8e4e3ff177fc55                                     my-kafka-cluster   1            1
+                             True
+strimzi-topic-operator-kstreams-topic-store-changelog---b75e702040b99be8a9263134de3507fc0cc4017b   my-kafka-cluster   1            1
+                             True
+
+-> Fetching Kafka User
+k get kafkauser -n my-kafka-project
+
+-> Deleting all the CRDs
+k delete crd kafkabridges.kafka.strimzi.io kafkaconnectors.kafka.strimzi.io kafkaconnects.kafka.strimzi.io kafkamirrormaker2s.kafka.strimzi.io kafkamirrormakers.kafka.strimzi.io kafkarebalances.kafka.strimzi.io kafkas.kafka.strimzi.io kafkatopics.kafka.strimzi.io kafkausers.kafka.strimzi.io
+

@@ -1,0 +1,20 @@
+
+helm repo add strimzi https://strimzi.io/charts/
+helm search repo strimzi
+helm install strimzi strimzi/strimzi-kafka-operator -n operator-helm --set watchNamespaces="{cluster-helm}"
+
+By pulling and then installing
+
+helm pull strimzi/strimzi-kafka-operator
+
+
+Using OLM
+
+curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.20.0/install.sh | bash -s v0.20.0
+kubectl create -f https://operatorhub.io/install/strimzi-kafka-operator.yaml
+kubectl get csv -n operators
+
+Deleting a namespace which is stuck -> https://www.ibm.com/docs/en/cloud-private/3.1.1?topic=console-namespace-is-stuck-in-terminating-state
+
+Helm Configuration ->
+https://github.com/strimzi/strimzi-kafka-operator/tree/main/helm-charts/helm3/strimzi-kafka-operator#configuration

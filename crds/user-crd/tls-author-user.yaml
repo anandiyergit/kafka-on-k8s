@@ -1,0 +1,49 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: authorize-tls-user
+  labels:
+    strimzi.io/cluster: authorize-tls-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+        - resource:
+            type: topic
+            name: authtlstopic
+            patternType: literal
+          operation: Read
+          host: "*"
+        - resource:
+            type: topic
+            name: authtlstopic
+            patternType: literal
+          operation: Describe
+          host: "*"
+        - resource:
+            type: group
+            name: strimzi-tls-auth
+            patternType: literal
+          operation: Read
+          host: "*"
+        # Example Producer Acls for topic my-topic
+        - resource:
+            type: topic
+            name: authtlstopic
+            patternType: literal
+          operation: Write
+          host: "*"
+        - resource:
+            type: topic
+            name: authtlstopic
+            patternType: literal
+          operation: Create
+          host: "*"
+        - resource:
+            type: topic
+            name: authtlstopic
+            patternType: literal
+          operation: Describe
+          host: "*"

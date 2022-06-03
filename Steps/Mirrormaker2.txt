@@ -1,0 +1,6 @@
+1. Create a active source cluster.
+2. Create a passive target cluster.
+3. Deploy a mirrormaker2 pointing to target cluster.
+4. Create a topic and check with messages.
+5. Create a producer pointing to Source/Active Kafka Cluster.
+6. Create a consumer pointing to Target/Passive Kafka Cluster.

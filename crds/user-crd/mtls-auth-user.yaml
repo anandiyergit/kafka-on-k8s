@@ -1,0 +1,9 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: mtls-user
+  labels:
+    strimzi.io/cluster: mtls-cluster
+spec:
+  authentication:
+    type: tls

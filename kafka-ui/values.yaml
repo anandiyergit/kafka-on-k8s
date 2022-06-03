@@ -1,0 +1,14 @@
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+kowl:
+  # See reference config: https://github.com/cloudhut/kowl/blob/master/docs/config/kowl.yaml)
+  config:
+    kafka:
+      brokers:
+        - <bootstrap-server-endpoint>

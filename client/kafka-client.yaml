@@ -1,0 +1,40 @@
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: kafka-client
+# spec:
+#   containers:
+#   - name: kafka-client
+#   # TODO: Convert the confluent image to our own ECR image
+#     image: confluentinc/cp-kafka:6.1.0
+#     command:
+#       - sh
+#       - -c
+#       - "exec tail -f /dev/null"
+
+# ---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-client
+  labels:
+    app: kafka-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-client
+  template:
+    metadata:
+      labels:
+        app: kafka-client
+    spec:
+      containers:
+      - name: kafka-client
+      # TODO: Convert the confluent image to our own ECR image
+        image: confluentinc/cp-kafka:6.1.0
+        command:
+          - sh
+          - -c
+          - "exec tail -f /dev/null"

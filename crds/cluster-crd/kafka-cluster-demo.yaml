@@ -1,0 +1,142 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka-demo
+spec:
+  kafka:
+    template:
+      externalBootstrapService:
+        metadata:
+          annotations:
+            # NLB Support
+            service.beta.kubernetes.io/aws-load-balancer-type: nlb
+            # Internally Exposed
+            service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
+      perPodService:
+        metadata:
+          annotations:
+            service.beta.kubernetes.io/aws-load-balancer-type: nlb
+            service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
+      pod:
+        # Affinity Strategies
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: strimzi.io/cluster
+                      operator: In
+                      values:
+                        - kafka-demo
+                topologyKey: "kubernetes.io/hostname"
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                  - key: eks.amazonaws.com/nodegroup
+                    operator: In
+                    values:
+                    - kafka-rnd-nodegroup
+    replicas: 1
+    listeners:
+      # Unsecured Not recommended for Production
+      - name: external
+        port: 9094
+        type: loadbalancer
+        tls: false
+      # m-TLS based Deployment
+      - name: external
+        port: 9094
+        type: loadbalancer
+        tls: true
+      # Scram based Deployment
+      - name: external
+        port: 9094
+        type: loadbalancer
+        tls: true
+        authentication:
+          type: scram-sha-512
+      # TLS Authentication
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+    # Used with TLS Authentication
+    authorization:
+      type: simple
+      superUsers:
+        - CN=authorize-tls-user
+        - authorize-tls-user
+    storage:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 50Gi
+        deleteClaim: false
+      - id: 1
+        type: persistent-claim
+        size: 50Gi
+        deleteClaim: false
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+  zookeeper:
+    template:
+      pod:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                  - key: eks.amazonaws.com/nodegroup
+                    operator: In
+                    values:
+                    - kafka-rnd-nodegroup
+    replicas: 1
+    storage:
+      type: persistent-claim
+      size: 50Gi
+      deleteClaim: false
+  # Strimzi Operators
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+  cruiseControl:
+    brokerCapacity:
+      disk: 1Gi
+      cpuUtilization: 80
+      inboundNetwork: 1000KB/s
+      outboundNetwork: 1000KB/s
+    config:
+      hard.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.CpuCapacityGoal
+    resources:
+      requests:
+        cpu: 2
+        memory: 2Gi
+      limits:
+        cpu: 2
+        memory: 4Gi
+    logging:
+        type: inline
+        loggers:
+          rootLogger.level: "INFO"
+    template:
+      pod:
+        securityContext:
+          runAsUser: 1000001
+          fsGroup: 0
+        terminationGracePeriodSeconds: 120
+    readinessProbe:
+      initialDelaySeconds: 150
+      timeoutSeconds: 10
+    livenessProbe:
+      initialDelaySeconds: 150
+      timeoutSeconds: 10

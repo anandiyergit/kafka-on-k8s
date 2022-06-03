@@ -1,0 +1,62 @@
+Running Kafka UI
+
+Helm Installation
+helm repo add cloudhut https://raw.githubusercontent.com/cloudhut/charts/master/archives
+helm repo update
+Navigate to kafka-ui
+Update the values.yaml according to the environment and deploy.
+helm install -f values.yaml kowl cloudhut/kowl
+helm install -f values.yaml kowl kowl/ -n kafka-ui
+
+
+CloudHut
+docker run -p 8080:8080 -e KAFKA_BROKERS=<bootstrap-server-endpoint> \
+-e KAFKA_TLS_ENABLED=false -e KAFKA_SASL_ENABLED=false quay.io/cloudhut/kowl:master
+
+With Encrypted SSL
+docker run -p 8080:8080 --mount type=bind,source=/Users/aniyer/temp/new-tls-client,target=/etc/tls  \
+-e KAFKA_BROKERS=<bootstrap-server-endpoint> \
+-e KAFKA_TLS_ENABLED=TRUE \
+-e KAFKA_TLS_CAFILEPATH=/etc/tls/ca.crt \
+quay.io/cloudhut/kowl:master
+
+With Mutual SSL
+docker run -p 8080:8080 --mount type=bind,source=/Users/aniyer/temp/new-auth-tls-client,target=/etc/tls \
+-e KAFKA_BROKERS=<bootstrap-server-endpoint> \
+-e KAFKA_TLS_ENABLED=TRUE \
+-e KAFKA_TLS_CAFILEPATH=/etc/tls/ca.crt \
+-e KAFKA_TLS_CERTFILEPATH=/etc/tls/user.crt \
+-e KAFKA_TLS_KEYFILEPATH=/etc/tls/user.key \
+quay.io/cloudhut/kowl:master
+
+With SASL-SSL SCRAM-SHA-512
+docker run -p 8080:8080 --mount type=bind,source=/Users/aniyer/temp/new-scram-client,target=/etc/tls \
+-e KAFKA_BROKERS=<bootstrap-server-endpoint> \
+-e KAFKA_TLS_ENABLED=true \
+-e KAFKA_TLS_CAFILEPATH=/etc/tls/ca.crt \
+-e KAFKA_SASL_ENABLED=true \
+-e KAFKA_SASL_MECHANISM=SCRAM-SHA-512 \
+-e KAFKA_SASL_USERNAME=<uname> \
+-e KAFKA_SASL_PASSWORD=<pwd>> \
+quay.io/cloudhut/kowl:master
+
+Configurations Reference -> https://github.com/cloudhut/kowl/blob/master/docs/config/kowl.yaml
+Reference -> https://cloudhut.dev/blog/2021-04-29-kowl-and-aiven/
+
+Provectus-UI
+docker run -p 8080:8080 -e KAFKA_CLUSTERS_0_NAME=cluster-kafka -e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=<bootstrap-server-endpoint> -d provectuslabs/kafka-ui:latest 
+
+KafkaDrop UI
+docker run -d --rm -p 9000:9000 -e KAFKA_BROKERCONNECT=<host:port,host:port> \
+    -e JVM_OPTS="-Xms32M -Xmx64M" \
+    -e SERVER_SERVLET_CONTEXTPATH="/" \
+    obsidiandynamics/kafdrop
+
+
+./kafka-producer-perf-test.sh --topic perf-topic --num-records 1000000 --throughput -1 --producer-props bootstrap.servers=<bootstrap-server-endpoint> batch.size=1000 acks=1 linger.ms=100000 buffer.memory=4294967296 compression.type=none request.timeout.ms=300000 --record-size 1000
+
+
+Kube Ops View
+$ kubectl proxy --accept-hosts '.*' &
+$ docker run -it -p 8080:8080 -e CLUSTERS=http://docker.for.mac.localhost:8001 hjacobs/kube-ops-view
+

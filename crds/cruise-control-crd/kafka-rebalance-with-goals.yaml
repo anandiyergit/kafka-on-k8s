@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: goal-rebalance
+  labels:
+    strimzi.io/cluster: cruise-cluster
+spec:
+  goals:
+    - RackAwareGoal
+    - ReplicaCapacityGoal
+    - NetworkInboundCapacityGoal
+    - NetworkOutboundCapacityGoal
+    - DiskCapacityGoal
+    #- CpuCapacityGoal

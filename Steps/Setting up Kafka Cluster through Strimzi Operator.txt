@@ -1,0 +1,159 @@
+Strimzi Installation -> https://strimzi.io/docs/operators/latest/quickstart.html
+
+Replace->
+
+kubectl get pods kafka-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}' -n kafka-cluster
+
+Setting up Strimzi operator
+
+1. Download latest Strimzi. Currently locking the 0.26 version
+2. Unzip the contents 
+3. Installation of K8s cluster with Cluster Admin privileges is pre-requisite.
+4. Create a new namespace for residing the operator->
+kubectl create ns kafka-operator
+5. Modify the installation files to reference the namespace used in #4
+sed -i 's/namespace: .*/namespace: operator-dev/' install/cluster-operator/*RoleBinding*.yaml
+For Mac->
+sed -i '' 's/namespace: .*/namespace: operator-dev/' install/cluster-operator/*RoleBinding*.yaml
+6. Create a new namespace for residing the kafka clusters->
+kubectl create ns kafka-cluster
+7. Update the Deployment.yaml for STRIMZI_NAMESPACE to the namespace used in #6
+8. Deploy the CRDs->
+kubectl create -f install/cluster-operator/ -n kafka-operator
+9. Give permission to the cluster operator for the namespace used in #6
+kubectl create -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n non-prod-shared-cluster
+kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n non-prod-shared-cluster
+
+End Result->
+NAME                                           READY   STATUS    RESTARTS   AGE
+pod/strimzi-cluster-operator-fc7546494-f52dp   0/1     Running   0          12s
+
+NAME                                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/strimzi-cluster-operator   0/1     1            0           13m
+
+NAME                                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/strimzi-cluster-operator-fc754vi6494   1         1         1       13m
+
+---------------------------------------------------------------------------------------------------
+
+Setting up Kafka Cluster
+
+1. Log in to the Kubernetes cluster as a non-privileged user
+2. Create new cluster for Kafka with desired number of replicas for brokers and Kafka. Prefer odd number for a better leader-follower algorithm.
+3. Use the following Custer configuration->
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka-cluster
+spec:
+  kafka:
+    replicas: 1
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+      - name: external
+        port: 9094
+        type: loadbalancer
+        tls: false
+    storage:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+  zookeeper:
+    replicas: 1
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: false
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+
+    k create -f strimzi-sample.yaml -n kafka-cluster
+    Check -> k get kafka -n kafka-cluster
+    NAME               DESIRED KAFKA REPLICAS   DESIRED ZK REPLICAS   READY   WARNINGS
+my-kafka-cluster   3                        3
+4. kubectl wait kafka/kafka-cluster --for=condition=Ready --timeout=300s -n kafka-cluster
+NAME               DESIRED KAFKA REPLICAS   DESIRED ZK REPLICAS   READY   WARNINGS
+my-kafka-cluster   3                        3                     True
+End result->
+anand@LAPTOP-OARG2NPC:~/strimzi/strimzi-0.26.0$ k get all -n kafka-cluster
+NAME                                                    READY   STATUS    RESTARTS   AGE
+pod/my-kafka-cluster-entity-operator-56dfcbdfdc-mb5ft   3/3     Running   0          82s
+pod/my-kafka-cluster-kafka-0                            1/1     Running   0          2m5s
+pod/my-kafka-cluster-kafka-1                            1/1     Running   0          2m5s
+pod/my-kafka-cluster-kafka-2                            1/1     Running   0          2m5s
+pod/my-kafka-cluster-zookeeper-0                        1/1     Running   0          3m3s
+pod/my-kafka-cluster-zookeeper-1                        1/1     Running   0          3m3s
+pod/my-kafka-cluster-zookeeper-2                        1/1     Running   1          3m3s
+
+NAME                                                TYPE           CLUSTER-IP       EXTERNAL-IP                                                               PORT(S)                               AGE
+service/my-kafka-cluster-kafka-0                    LoadBalancer   10.100.61.238    a***.us-west-2.elb.amazonaws.com   9094:31066/TCP                         2m31s
+service/my-kafka-cluster-kafka-1                    LoadBalancer   10.100.11.212    a***.us-west-2.elb.amazonaws.com    9094:30432/TCP                        2m31s
+service/my-kafka-cluster-kafka-2                    LoadBalancer   10.100.134.232   a***.us-west-2.elb.amazonaws.com   9094:32070/TCP                         2m31s
+service/my-kafka-cluster-kafka-bootstrap            ClusterIP      10.100.153.165   <none>                                                                    9091/TCP,9092/TCP,9093/TCP            2m31s
+service/my-kafka-cluster-kafka-brokers              ClusterIP      None             <none>                                                                    9090/TCP,9091/TCP,9092/TCP,9093/TCP   2m31s
+service/my-kafka-cluster-kafka-external-bootstrap   LoadBalancer   10.100.196.244   a***.us-west-2.elb.amazonaws.com   9094:32463/TCP                         2m31s
+service/my-kafka-cluster-zookeeper-client           ClusterIP      10.100.157.95    <none>                                                                    2181/TCP                              3m20s
+service/my-kafka-cluster-zookeeper-nodes            ClusterIP      None             <none>                                                                    2181/TCP,2888/TCP,3888/TCP            3m20s
+
+NAME                                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/my-kafka-cluster-entity-operator   1/1     1            1           108s
+
+NAME                                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/my-kafka-cluster-entity-operator-56dfcbdfdc   1         1         1       109s
+
+NAME                                          READY   AGE
+statefulset.apps/my-kafka-cluster-kafka       3/3     2m33s
+statefulset.apps/my-kafka-cluster-zookeeper   3/3     3m31s
+
+5. Create a Topic
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: kafka-cluster-topic
+  labels:
+    strimzi.io/cluster: "kafka-cluster"
+spec:
+  partitions: 3
+  replicas: 3
+
+k apply -f kafka-topic.yaml -n kafka-cluster
+
+Check for CRD
+anand@LAPTOP-OARG2NPC:~/strimzi/strimzi-0.26.0/examples/topic$ k get kafkatopic -n kafka-cluster
+NAME                                                                                               CLUSTER            PARTITIONS   REPLICATION FACTOR   READY
+consumer-offsets---84e7a678d08f4bd226872e5cdd4eb527fadc1c6a                                        my-kafka-cluster   50           1
+    True
+kafka-cluster-topic                                                                                kafka-cluster      3            3
+
+strimzi-store-topic---effb8e3e057afce1ecf67c3f5d8e4e3ff177fc55                                     my-kafka-cluster   1            3
+    True
+strimzi-topic-operator-kstreams-topic-store-changelog---b75e702040b99be8a9263134de3507fc0cc4017b   my-kafka-cluster   1            1
+    True
+
+6. Use the service/my-kafka-cluster-kafka-external-bootstrap loadbalancer external IP which needs to e known to the clients connecting.
+7. List Topics
+./kafka-topics.sh --bootstrap-server  a***.elb.us-west-2.amazonaws.com:9094 --list
+
+
+8. Send Messages
+./kafka-console-producer.sh --broker-list a***.elb.us-west-2.amazonaws.com:9094 --topic dev-cluster-new-topic
+
+9. Consume Messages
+./kafka-console-consumer.sh  --bootstrap-server a***.elb.us-west-2.amazonaws.com:9094 --topic jmeter-load-topic --from-beginning

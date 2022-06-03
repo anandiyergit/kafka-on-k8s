@@ -1,0 +1,56 @@
+Follow the instructions to deploy the Mutual TLS based encryption data from client to server
+
+Brief -> Applying different authentication types: TLS and SASL SCRAM-SHA-512 on to the cluster and provide authentication and authorization for clients.
+
+1. Changes in the Kafka CRD
+external:
+  type: loadbalancer
+  tls: true
+  authentication:
+    type: tls
+
+2. Deploy the CRD.
+
+3. Deploy Kafka User CRD.
+
+4. Deploy Kafka Topic CRD.
+
+5. TLS client authentication->
+
+Extract and configure the user credentials
+
+export KAFKA_USER_NAME=tls-user
+kubectl get secret $KAFKA_USER_NAME -o jsonpath='{.data.user\.crt}' | base64 --decode > user.crt
+kubectl get secret $KAFKA_USER_NAME -o jsonpath='{.data.user\.key}' | base64 --decode > user.key
+kubectl get secret $KAFKA_USER_NAME -o jsonpath='{.data.user\.p12}' | base64 --decode > user.p12
+kubectl get secret $KAFKA_USER_NAME -o jsonpath='{.data.user\.password}' | base64 --decode > user.password
+
+Import the entry in user.p12 into another keystore
+
+export USER_P12_FILE_PATH=user.p12
+export USER_KEY_PASSWORD_FILE_PATH=user.password
+export KEYSTORE_NAME=kafka-auth-keystore.jks
+export KEYSTORE_PASSWORD=foobar
+export PASSWORD=`cat $USER_KEY_PASSWORD_FILE_PATH`
+keytool -importkeystore -deststorepass $KEYSTORE_PASSWORD -destkeystore $KEYSTORE_NAME -srckeystore $USER_P12_FILE_PATH -srcstorepass $PASSWORD -srcstoretype PKCS12
+keytool -list -alias $KAFKA_USER_NAME -keystore $KEYSTORE_NAME
+
+6. Extract and configure server CA cert->
+
+Extract the cluster CA certificate and password
+
+export CLUSTER_NAME=tls-cluster
+kubectl get secret $CLUSTER_NAME-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 --decode > ca.crt
+kubectl get secret $CLUSTER_NAME-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 --decode > ca.password
+
+7. Run a go-based client to test. Following are importatn configurations->
+
+export KAFKA_BOOTSTRAP_SERVERS=[replace with public-ip:9094]
+export CA_CERT_LOCATION=[replace with location of ca.crt file]
+export KAFKA_TOPIC=test-strimzi-topic
+export USER_CERT_LOCATION=[path to user.crt file]
+export USER_KEY_LOCATION=[path to user.key file]
+export USER_KEY_PASSWORD=[contents of user.password file]
+
+go build -tags dynamic client.go
+./client
