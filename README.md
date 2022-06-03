@@ -86,12 +86,3 @@ The starter kit uses the following project layout:
     └── strimzi
         ├── Complete Operator Package
 ```
-
-## Custom Resources
-
-All the CRs needed for flaviour of deployments are created and then later refactored into the <a href="https://github.com/ZscalerCWP/cwp-deployment">cwp deployment repository.</a>
-    
-
-## Kubernetes Deployment in EKS
-
-Follow the steps mentioned in <a href="https://confluence.corp.zscaler.com/display/CWP/Provisioning+Apache+Kafka+on+EKS">Confluence.</a>
