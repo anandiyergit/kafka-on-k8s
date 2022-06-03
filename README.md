@@ -51,16 +51,11 @@ The starter kit uses the following project layout:
 ├── crds
 │   ├── cluster-crd
 │   │   ├── kafka-cluster-cruise-control.yaml
-│   │   ├── kafka-cluster-int.yaml
 │   │   ├── kafka-cluster-internal-nlb.yaml
 │   │   ├── kafka-cluster-mtls.yaml
 │   │   ├── kafka-cluster-nlb.yaml
 │   │   ├── kafka-cluster-pod-antiaffinity.yaml
-│   │   ├── kafka-cluster-preview.yaml
-│   │   ├── kafka-cluster-scale.yaml
 │   │   ├── kafka-cluster-scram.yaml
-│   │   ├── kafka-cluster-source.yaml
-│   │   ├── kafka-cluster-target.yaml
 │   │   ├── kafka-cluster-tls-authorize.yaml
 │   │   └── kafka-cluster-tls.yaml
 │   ├── cruise-control-crd
@@ -68,6 +63,8 @@ The starter kit uses the following project layout:
 │   │   └── kafka-rebalance.yaml
 │   ├── mirrormaker-crd
 │   │   └── kafka-mirror-maker-2.yaml
+│   │   ├── kafka-cluster-source.yaml
+│   │   ├── kafka-cluster-target.yaml
 │   ├── topic-crd
 │   │   └── kafka-topic.yaml
 │   └── user-crd
